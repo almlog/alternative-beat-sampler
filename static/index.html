@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>alternative-beat-sampler | PO/EP Groovebox</title>
+  
+  <!-- Google Fonts: Noto Sans JP & Space Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <!-- Material Symbols -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans JP"', 'sans-serif'],
+            mono: ['"Space Mono"', 'monospace'],
+          },
+          colors: {
+            gadget: {
+              bg: '#18181b',
+              surface: '#27272a',
+              card: '#1f1f23',
+              border: '#3f3f46',
+              accent: '#f97316', // Teenage Engineering Orange
+              led: '#22c55e',
+              lcd: '#10b981',
+              lcdBg: '#064e3b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .step-active {
+      background-color: #f97316 !important;
+      color: #000 !important;
+      box-shadow: 0 0 10px rgba(249, 115, 22, 0.8);
+    }
+    .step-current {
+      border: 2px solid #22c55e !important;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.9);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #3f3f46;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 font-sans min-h-screen p-4 md:p-8 flex flex-col justify-between">
+  
+  <div class="max-w-6xl mx-auto w-full space-y-6">
+    <!-- Header -->
+    <header class="flex flex-wrap items-center justify-between border-b border-zinc-800 pb-4 gap-4">
+      <div class="flex items-center space-x-3">
+        <span class="material-symbols-outlined text-orange-500 text-3xl">graphic_eq</span>
+        <div>
+          <h1 class="text-2xl font-mono font-bold tracking-wider text-white">alternative-beat-sampler</h1>
+          <p class="text-xs text-zinc-400">PO / EP Style AI Groovebox & Step Sequencer</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="bg-zinc-900 border border-zinc-700 px-3 py-1.5 rounded-lg flex items-center space-x-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="text-xs font-mono text-zinc-300">ENGINE: READY</span>
+        </div>
+        <button id="masterPowerBtn" class="bg-orange-600 hover:bg-orange-500 text-white font-mono text-xs px-4 py-2 rounded-lg flex items-center space-x-1 shadow-md transition">
+          <span class="material-symbols-outlined text-sm">power_settings_new</span>
+          <span>AUDIO INIT</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Left & Center: Gadget / Sequencer Console (8 cols) -->
+      <section class="lg:col-span-8 space-y-6">
+        
+        <!-- Hardware Style Display & Knobs Deck -->
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-xl space-y-6">
+          
+          <!-- Top Display / LCD HUD -->
+          <div class="bg-emerald-950 border-2 border-emerald-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4 font-mono text-emerald-400 shadow-inner">
+            <div class="flex items-center space-x-4">
+              <div>
+                <div class="text-[10px] text-emerald-600 uppercase tracking-widest">BPM TEMPO</div>
+                <div id="lcdBpm" class="text-3xl font-bold tracking-wider">120</div>
+              </div>
+              <div class="border-l border-emerald-800 h-8"></div>
+              <div>
+                <div class="text-[10px] text-emerald-600 uppercase tracking-widest">FILTER (Hz)</div>
+                <div id="lcdFilter" class="text-2xl font-bold">2000</div>
+              </div>
+              <div class="border-l border-emerald-800 h-8"></div>
+              <div>
+                <div class="text-[10px] text-emerald-600 uppercase tracking-widest">SWING / PITCH</div>
+                <div id="lcdPitch" class="text-2xl font-bold">1.0x</div>
+              </div>
+            </div>
+
+            <!-- Transport Buttons -->
+            <div class="flex items-center space-x-3">
+              <button id="playBtn" class="bg-emerald-500 hover:bg-emerald-400 text-black font-bold px-5 py-2.5 rounded-lg flex items-center space-x-1 shadow transition">
+                <span class="material-symbols-outlined">play_arrow</span>
+                <span>PLAY</span>
+              </button>
+              <button id="stopBtn" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-bold px-4 py-2.5 rounded-lg flex items-center space-x-1 border border-zinc-700 transition">
+                <span class="material-symbols-outlined">stop</span>
+                <span>STOP</span>
+              </button>
+              <button id="clearBtn" class="bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white px-3 py-2.5 rounded-lg border border-zinc-700 transition" title="Clear Grid">
+                <span class="material-symbols-outlined text-sm">restart_alt</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Dials & Sliders (BPM, Filter Cutoff, Pitch, Volume) -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-zinc-950 p-4 rounded-xl border border-zinc-800">
+            <!-- BPM Slider -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs font-mono text-zinc-400">
+                <span>TEMPO</span>
+                <span id="labelBpm">120 BPM</span>
+              </div>
+              <input id="sliderBpm" type="range" min="50" max="200" value="120" class="w-full accent-orange-500 bg-zinc-800 h-2 rounded-lg cursor-pointer">
+            </div>
+
+            <!-- Filter Slider -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs font-mono text-zinc-400">
+                <span>LP FILTER</span>
+                <span id="labelFilter">2000 Hz</span>
+              </div>
+              <input id="sliderFilter" type="range" min="150" max="12000" value="2000" class="w-full accent-orange-500 bg-zinc-800 h-2 rounded-lg cursor-pointer">
+            </div>
+
+            <!-- Pitch Slider -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs font-mono text-zinc-400">
+                <span>PITCH</span>
+                <span id="labelPitch">1.0x</span>
+              </div>
+              <input id="sliderPitch" type="range" min="0.5" max="2.0" step="0.05" value="1.0" class="w-full accent-orange-500 bg-zinc-800 h-2 rounded-lg cursor-pointer">
+            </div>
+
+            <!-- Volume Slider -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-xs font-mono text-zinc-400">
+                <span>MASTER VOL</span>
+                <span id="labelVolume">80%</span>
+              </div>
+              <input id="sliderVolume" type="range" min="0" max="100" value="80" class="w-full accent-orange-500 bg-zinc-800 h-2 rounded-lg cursor-pointer">
+            </div>
+          </div>
+
+          <!-- 16-Step Matrix (Kick, Snare, HiHat, Sample) -->
+          <div class="space-y-3">
+            <div class="flex justify-between items-center text-xs font-mono text-zinc-400 px-1">
+              <span>16-STEP MATRIX TRACKS</span>
+              <span class="text-[10px] text-zinc-500">CLICK TO TOGGLE STEP</span>
+            </div>
+
+            <!-- Matrix Rows -->
+            <div id="matrixContainer" class="space-y-2">
+              <!-- Dynamically generated rows for Kick, Snare, HiHat, Sample -->
+            </div>
+          </div>
+
+          <!-- Sampler Pads & Mic Recorder Section (F2) -->
+          <div class="bg-zinc-950 p-4 rounded-xl border border-zinc-800 space-y-3">
+            <div class="flex flex-wrap justify-between items-center gap-2">
+              <div class="flex items-center space-x-2 text-xs font-mono text-zinc-300">
+                <span class="material-symbols-outlined text-orange-500 text-sm">mic</span>
+                <span>SAMPLER TRIGGER PADS (PO-133 / EP-133 STYLE)</span>
+              </div>
+              <div class="flex items-center space-x-2">
+                <button id="micRecordBtn" class="bg-red-900/60 hover:bg-red-800 border border-red-700 text-red-200 text-xs px-3 py-1.5 rounded-lg flex items-center space-x-1 transition">
+                  <span class="material-symbols-outlined text-sm">fiber_manual_record</span>
+                  <span id="recordStatusText">REC MIC TO PAD 4</span>
+                </button>
+                <label class="bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-xs px-3 py-1.5 rounded-lg cursor-pointer flex items-center space-x-1 transition">
+                  <span class="material-symbols-outlined text-sm">upload_file</span>
+                  <span>LOAD AUDIO</span>
+                  <input id="fileAudioInput" type="file" accept="audio/*" class="hidden">
+                </label>
+              </div>
+            </div>
+
+            <!-- 4 Trigger Pads -->
+            <div class="grid grid-cols-4 gap-3">
+              <button class="sampler-pad bg-zinc-800 hover:bg-zinc-700 active:bg-orange-500 active:text-black border border-zinc-700 text-zinc-200 font-mono text-sm py-4 rounded-xl shadow flex flex-col items-center justify-center transition" data-track="kick">
+                <span class="font-bold">PAD 1</span>
+                <span class="text-[10px] text-zinc-400">808 KICK</span>
+              </button>
+              <button class="sampler-pad bg-zinc-800 hover:bg-zinc-700 active:bg-orange-500 active:text-black border border-zinc-700 text-zinc-200 font-mono text-sm py-4 rounded-xl shadow flex flex-col items-center justify-center transition" data-track="snare">
+                <span class="font-bold">PAD 2</span>
+                <span class="text-[10px] text-zinc-400">CRACK SNARE</span>
+              </button>
+              <button class="sampler-pad bg-zinc-800 hover:bg-zinc-700 active:bg-orange-500 active:text-black border border-zinc-700 text-zinc-200 font-mono text-sm py-4 rounded-xl shadow flex flex-col items-center justify-center transition" data-track="hihat">
+                <span class="font-bold">PAD 3</span>
+                <span class="text-[10px] text-zinc-400">CLOSED HAT</span>
+              </button>
+              <button id="pad4Btn" class="sampler-pad bg-zinc-800 hover:bg-zinc-700 active:bg-orange-500 active:text-black border border-orange-700/60 text-zinc-200 font-mono text-sm py-4 rounded-xl shadow flex flex-col items-center justify-center transition" data-track="sample">
+                <span class="font-bold text-orange-400">PAD 4</span>
+                <span id="pad4Label" class="text-[10px] text-zinc-400">SAMPLE / VOX</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Right: AI Co-Producer & Chat Console (4 cols) -->
+      <section class="lg:col-span-4 flex flex-col h-full space-y-4">
+        
+        <div class="bg-white rounded-xl shadow-md p-6 border border-zinc-200 text-zinc-900 flex flex-col h-[650px] justify-between">
+          
+          <!-- Panel Header -->
+          <div class="border-b border-zinc-200 pb-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="material-symbols-outlined text-orange-600">smart_toy</span>
+              <h2 class="font-bold text-base">AI ビートメイカー</h2>
+            </div>
+            <span class="text-xs bg-orange-100 text-orange-800 font-mono px-2 py-0.5 rounded-full font-medium">Gemini 3.8</span>
+          </div>
+
+          <!-- Quick Genre Prompt Pills -->
+          <div class="py-2 flex flex-wrap gap-1.5 text-xs">
+            <button class="prompt-pill bg-zinc-100 hover:bg-orange-50 hover:text-orange-700 border border-zinc-200 px-2.5 py-1 rounded-md text-zinc-700 transition">Lo-Fi HipHop</button>
+            <button class="prompt-pill bg-zinc-100 hover:bg-orange-50 hover:text-orange-700 border border-zinc-200 px-2.5 py-1 rounded-md text-zinc-700 transition">House 4つ打ち</button>
+            <button class="prompt-pill bg-zinc-100 hover:bg-orange-50 hover:text-orange-700 border border-zinc-200 px-2.5 py-1 rounded-md text-zinc-700 transition">Funk シンコペ</button>
+            <button class="prompt-pill bg-zinc-100 hover:bg-orange-50 hover:text-orange-700 border border-zinc-200 px-2.5 py-1 rounded-md text-zinc-700 transition">こもった音に</button>
+          </div>
+
+          <!-- Chat History Log -->
+          <div id="chatHistory" class="flex-1 overflow-y-auto space-y-3 pr-1 text-sm custom-scroll">
+            <div class="bg-zinc-100 text-zinc-800 p-3 rounded-lg text-xs leading-relaxed">
+              👋 <strong>alternative-beat-sampler</strong> へようこそ！<br>
+              「Lo-Fi HipHopのビート組んで」「BPMを130にしてフィルター絞って」など、自由にセッションしましょう！
+            </div>
+          </div>
+
+          <!-- Chat Input Form -->
+          <form id="chatForm" class="mt-3 pt-3 border-t border-zinc-200 flex gap-2">
+            <input id="chatInput" type="text" placeholder="AIにビートメイクや音作りを指示..." class="flex-1 border border-zinc-300 rounded-lg px-3 py-2 text-xs text-zinc-900 focus:outline-none focus:ring-2 focus:ring-orange-500">
+            <button type="submit" id="sendBtn" class="bg-orange-600 hover:bg-orange-500 text-white rounded-lg px-3.5 py-2 flex items-center justify-center transition">
+              <span class="material-symbols-outlined text-sm">send</span>
+            </button>
+          </form>
+
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center text-xs text-zinc-500 py-2 border-t border-zinc-800">
+      &copy; 2026 alternative-beat-sampler | Built with Google ADK, Web Audio API & Tailwind CSS
+    </footer>
+  </div>
+
+  <!-- Audio Engine & UI Controller Script -->
+  <script>
+    // Audio Engine State
+    let audioCtx = null;
+    let isPlaying = false;
+    let currentStep = 0;
+    let timerId = null;
+
+    // Track names & steps
+    const TRACKS = ['kick', 'snare', 'hihat', 'sample'];
+    let state = {
+      tempo_bpm: 120,
+      filter_cutoff: 2000.0,
+      pitch: 1.0,
+      volume: 0.8,
+      patterns: {
+        kick:   [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+        snare:  [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+        hihat:  [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+        sample: [0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0]
+      }
+    };
+
+    // Custom Sample Buffer for Pad 4
+    let customSampleBuffer = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let isRecording = false;
+
+    // Initialize Web Audio Context
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // Sound Synthesizers
+    function playKick(time) {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const pitchMult = state.pitch || 1.0;
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150 * pitchMult, time);
+      osc.frequency.exponentialRampToValueAtTime(30 * pitchMult, time + 0.12);
+
+      gain.gain.setValueAtTime(1.0 * state.volume, time);
+      gain.gain.exponentialRampToValueAtTime(0.001, time + 0.3);
+
+      connectMaster(osc, gain, time, 0.3);
+    }
+
+    function playSnare(time) {
+      if (!audioCtx) return;
+      const noiseBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.15, audioCtx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < noiseBuffer.length; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = noiseBuffer;
+
+      const noiseFilter = audioCtx.createBiquadFilter();
+      noiseFilter.type = 'highpass';
+      noiseFilter.frequency.value = 1000;
+      noise.connect(noiseFilter);
+
+      const noiseEnvelope = audioCtx.createGain();
+      noiseEnvelope.gain.setValueAtTime(0.8 * state.volume, time);
+      noiseEnvelope.gain.exponentialRampToValueAtTime(0.01, time + 0.18);
+      noiseFilter.connect(noiseEnvelope);
+
+      // Body tone
+      const osc = audioCtx.createOscillator();
+      const oscGain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(180 * (state.pitch || 1.0), time);
+      osc.frequency.exponentialRampToValueAtTime(40, time + 0.1);
+      oscGain.gain.setValueAtTime(0.6 * state.volume, time);
+      oscGain.gain.exponentialRampToValueAtTime(0.01, time + 0.12);
+
+      connectMaster(noiseEnvelope, null, time, 0.2);
+      connectMaster(osc, oscGain, time, 0.15);
+    }
+
+    function playHiHat(time) {
+      if (!audioCtx) return;
+      const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.05, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < buffer.length; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const source = audioCtx.createBufferSource();
+      source.buffer = buffer;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'highpass';
+      filter.frequency.value = 7000 * (state.pitch || 1.0);
+
+      const gain = audioCtx.createGain();
+      gain.gain.setValueAtTime(0.6 * state.volume, time);
+      gain.gain.exponentialRampToValueAtTime(0.01, time + 0.05);
+
+      source.connect(filter);
+      filter.connect(gain);
+      connectMaster(gain, null, time, 0.06);
+    }
+
+    function playSample(time) {
+      if (!audioCtx) return;
+      if (customSampleBuffer) {
+        const source = audioCtx.createBufferSource();
+        source.buffer = customSampleBuffer;
+        source.playbackRate.value = state.pitch || 1.0;
+        const gain = audioCtx.createGain();
+        gain.gain.value = 0.9 * state.volume;
+        source.connect(gain);
+        connectMaster(gain, null, time, customSampleBuffer.duration);
+        source.start(time);
+      } else {
+        // Default synth chime / Rhodes chord
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(440 * (state.pitch || 1.0), time);
+        osc.frequency.exponentialRampToValueAtTime(220 * (state.pitch || 1.0), time + 0.25);
+        gain.gain.setValueAtTime(0.5 * state.volume, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.35);
+        connectMaster(osc, gain, time, 0.35);
+      }
+    }
+
+    // Connect Node to Master Lowpass Filter and Master Gain
+    function connectMaster(sourceNode, gainNode, time, duration) {
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = state.filter_cutoff || 2000.0;
+
+      const dest = audioCtx.destination;
+      if (gainNode) {
+        sourceNode.connect(gainNode);
+        gainNode.connect(filter);
+      } else {
+        sourceNode.connect(filter);
+      }
+      filter.connect(dest);
+
+      if (sourceNode.start) {
+        sourceNode.start(time);
+        sourceNode.stop(time + duration);
+      }
+    }
+
+    // Trigger individual instrument
+    function triggerTrack(track) {
+      initAudio();
+      const now = audioCtx.currentTime;
+      if (track === 'kick') playKick(now);
+      else if (track === 'snare') playSnare(now);
+      else if (track === 'hihat') playHiHat(now);
+      else if (track === 'sample') playSample(now);
+    }
+
+    // Sequencer Playback Loop
+    function runSequencerStep() {
+      if (!isPlaying || !audioCtx) return;
+
+      const now = audioCtx.currentTime;
+      TRACKS.forEach(trk => {
+        if (state.patterns[trk] && state.patterns[trk][currentStep]) {
+          if (trk === 'kick') playKick(now);
+          else if (trk === 'snare') playSnare(now);
+          else if (trk === 'hihat') playHiHat(now);
+          else if (trk === 'sample') playSample(now);
+        }
+      });
+
+      // Update UI step indicator
+      updateCurrentStepUI(currentStep);
+
+      currentStep = (currentStep + 1) % 16;
+      const intervalMs = (60 / state.tempo_bpm / 4) * 1000;
+      timerId = setTimeout(runSequencerStep, intervalMs);
+    }
+
+    function startPlayback() {
+      initAudio();
+      if (isPlaying) return;
+      isPlaying = true;
+      currentStep = 0;
+      document.getElementById('playBtn').classList.add('ring-2', 'ring-emerald-300');
+      runSequencerStep();
+    }
+
+    function stopPlayback() {
+      isPlaying = false;
+      if (timerId) clearTimeout(timerId);
+      document.getElementById('playBtn').classList.remove('ring-2', 'ring-emerald-300');
+      updateCurrentStepUI(-1);
+    }
+
+    // UI Builders & Event Handlers
+    function renderMatrix() {
+      const container = document.getElementById('matrixContainer');
+      container.innerHTML = '';
+
+      TRACKS.forEach(trk => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center space-x-1.5';
+
+        // Track label
+        const lbl = document.createElement('button');
+        lbl.className = 'w-16 text-[11px] font-mono font-bold uppercase text-zinc-400 hover:text-white text-left px-1 py-1 rounded bg-zinc-900 border border-zinc-800 transition';
+        lbl.textContent = trk;
+        lbl.onclick = () => triggerTrack(trk);
+        row.appendChild(lbl);
+
+        // 16 Step buttons
+        const stepGrid = document.createElement('div');
+        stepGrid.className = 'grid grid-cols-16 flex-1 gap-1';
+        stepGrid.style.gridTemplateColumns = 'repeat(16, minmax(0, 1fr))';
+
+        for (let i = 0; i < 16; i++) {
+          const btn = document.createElement('button');
+          const isActive = state.patterns[trk] && state.patterns[trk][i];
+          btn.className = `step-btn h-9 rounded text-[10px] font-mono font-bold transition flex items-center justify-center border border-zinc-800 ${
+            isActive ? 'step-active' : (i % 4 === 0 ? 'bg-zinc-800 text-zinc-300' : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800')
+          }`;
+          btn.dataset.track = trk;
+          btn.dataset.step = i;
+          btn.textContent = (i + 1);
+
+          btn.onclick = () => {
+            const currentVal = state.patterns[trk][i];
+            state.patterns[trk][i] = currentVal ? 0 : 1;
+            renderMatrix();
+            // Sync to backend
+            fetch('/api/pattern', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ track: trk, steps: state.patterns[trk] })
+            });
+          };
+
+          stepGrid.appendChild(btn);
+        }
+        row.appendChild(stepGrid);
+        container.appendChild(row);
+      });
+    }
+
+    function updateCurrentStepUI(stepIndex) {
+      document.querySelectorAll('.step-btn').forEach(btn => {
+        const step = parseInt(btn.dataset.step, 10);
+        if (step === stepIndex) {
+          btn.classList.add('step-current');
+        } else {
+          btn.classList.remove('step-current');
+        }
+      });
+    }
+
+    function updateControlUI() {
+      document.getElementById('lcdBpm').textContent = Math.round(state.tempo_bpm);
+      document.getElementById('labelBpm').textContent = `${Math.round(state.tempo_bpm)} BPM`;
+      document.getElementById('sliderBpm').value = Math.round(state.tempo_bpm);
+
+      document.getElementById('lcdFilter').textContent = Math.round(state.filter_cutoff);
+      document.getElementById('labelFilter').textContent = `${Math.round(state.filter_cutoff)} Hz`;
+      document.getElementById('sliderFilter').value = Math.round(state.filter_cutoff);
+
+      document.getElementById('lcdPitch').textContent = `${Number(state.pitch).toFixed(1)}x`;
+      document.getElementById('labelPitch').textContent = `${Number(state.pitch).toFixed(1)}x`;
+      document.getElementById('sliderPitch').value = state.pitch;
+
+      document.getElementById('labelVolume').textContent = `${Math.round(state.volume * 100)}%`;
+      document.getElementById('sliderVolume').value = Math.round(state.volume * 100);
+    }
+
+    // Backend sync
+    async function loadBackendState() {
+      try {
+        const res = await fetch('/api/state');
+        if (res.ok) {
+          const data = await res.json();
+          state = data;
+          renderMatrix();
+          updateControlUI();
+        }
+      } catch (e) {
+        console.error("State load error:", e);
+      }
+    }
+
+    // Event listeners
+    document.getElementById('masterPowerBtn').onclick = () => {
+      initAudio();
+      alert("Web Audio Engine Active!");
+    };
+    document.getElementById('playBtn').onclick = startPlayback;
+    document.getElementById('stopBtn').onclick = stopPlayback;
+    document.getElementById('clearBtn').onclick = () => {
+      TRACKS.forEach(t => state.patterns[t] = Array(16).fill(0));
+      renderMatrix();
+    };
+
+    // Sliders
+    document.getElementById('sliderBpm').oninput = (e) => {
+      state.tempo_bpm = parseInt(e.target.value, 10);
+      updateControlUI();
+    };
+    document.getElementById('sliderBpm').onchange = syncParams;
+
+    document.getElementById('sliderFilter').oninput = (e) => {
+      state.filter_cutoff = parseFloat(e.target.value);
+      updateControlUI();
+    };
+    document.getElementById('sliderFilter').onchange = syncParams;
+
+    document.getElementById('sliderPitch').oninput = (e) => {
+      state.pitch = parseFloat(e.target.value);
+      updateControlUI();
+    };
+    document.getElementById('sliderPitch').onchange = syncParams;
+
+    document.getElementById('sliderVolume').oninput = (e) => {
+      state.volume = parseInt(e.target.value, 10) / 100;
+      updateControlUI();
+    };
+    document.getElementById('sliderVolume').onchange = syncParams;
+
+    async function syncParams() {
+      await fetch('/api/parameters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tempo_bpm: state.tempo_bpm,
+          filter_cutoff: state.filter_cutoff,
+          pitch: state.pitch,
+          volume: state.volume
+        })
+      });
+    }
+
+    // Pad triggers
+    document.querySelectorAll('.sampler-pad').forEach(pad => {
+      pad.addEventListener('click', () => {
+        const trk = pad.dataset.track;
+        triggerTrack(trk);
+      });
+    });
+
+    // Mic Recorder (F2)
+    const micBtn = document.getElementById('micRecordBtn');
+    micBtn.onclick = async () => {
+      initAudio();
+      if (!isRecording) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          recordedChunks = [];
+          mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+          mediaRecorder.onstop = async () => {
+            const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+            const arrayBuf = await blob.arrayBuffer();
+            customSampleBuffer = await audioCtx.decodeAudioData(arrayBuf);
+            document.getElementById('pad4Label').textContent = "MIC RECORDED";
+            document.getElementById('recordStatusText').textContent = "REC MIC TO PAD 4";
+            micBtn.classList.remove('bg-red-600', 'animate-pulse');
+            alert("録音完了！Pad 4 にマイク音声を割り当てました。");
+          };
+          mediaRecorder.start();
+          isRecording = true;
+          document.getElementById('recordStatusText').textContent = "RECORDING... STOP";
+          micBtn.classList.add('bg-red-600', 'animate-pulse');
+        } catch (err) {
+          alert("マイクアクセスに失敗しました: " + err.message);
+        }
+      } else {
+        mediaRecorder.stop();
+        isRecording = false;
+      }
+    };
+
+    // File Upload (F2)
+    document.getElementById('fileAudioInput').onchange = async (e) => {
+      initAudio();
+      const file = e.target.files[0];
+      if (file) {
+        const arrayBuf = await file.arrayBuffer();
+        customSampleBuffer = await audioCtx.decodeAudioData(arrayBuf);
+        document.getElementById('pad4Label').textContent = file.name.substring(0, 12);
+        alert(`音声ファイル「${file.name}」を Pad 4 に読み込みました！`);
+      }
+    };
+
+    // AI Chat Handling
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatInput');
+    const chatHistory = document.getElementById('chatHistory');
+
+    chatForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const msg = chatInput.value.trim();
+      if (!msg) return;
+
+      appendChatMessage('user', msg);
+      chatInput.value = '';
+
+      const loadingDiv = appendChatMessage('ai', 'Thinking & Generating Beat...');
+
+      try {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: msg, user_id: 'web-user' })
+        });
+        const data = await res.json();
+        loadingDiv.innerHTML = data.reply.replace(/\n/g, '<br>');
+
+        // AIの操作結果で最新Stateが返ってきていたら画面を即座に更新
+        if (data.state) {
+          state = data.state;
+          renderMatrix();
+          updateControlUI();
+        }
+      } catch (err) {
+        loadingDiv.innerHTML = `<span class="text-red-500">通信エラーが発生しました: ${err.message}</span>`;
+      }
+    };
+
+    function appendChatMessage(sender, text) {
+      const msgDiv = document.createElement('div');
+      if (sender === 'user') {
+        msgDiv.className = 'bg-orange-50 border border-orange-200 text-orange-950 p-3 rounded-lg text-xs leading-relaxed ml-4';
+        msgDiv.innerHTML = `<strong>You:</strong> ${text}`;
+      } else {
+        msgDiv.className = 'bg-zinc-100 text-zinc-900 p-3 rounded-lg text-xs leading-relaxed mr-4';
+        msgDiv.innerHTML = `<strong>AI:</strong> ${text}`;
+      }
+      chatHistory.appendChild(msgDiv);
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+      return msgDiv;
+    }
+
+    // Quick Prompt Pills
+    document.querySelectorAll('.prompt-pill').forEach(pill => {
+      pill.onclick = () => {
+        chatInput.value = pill.textContent + " に合うビートや設定にして";
+        chatForm.requestSubmit();
+      };
+    });
+
+    // Boot
+    loadBackendState();
+  </script>
+</body>
+</html>
